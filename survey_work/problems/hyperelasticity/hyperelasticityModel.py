@@ -58,6 +58,8 @@ class HyperelasticityModel(PDEModel):
         self._traction_x = fem.Constant(self.mesh, default_scalar_type(20.0))
         self._traction_y = fem.Constant(self.mesh, default_scalar_type(50.0))
         self.t = ufl.as_vector((self._traction_x, self._traction_y))
+        # target (fully-loaded) traction, restored before a residual correction
+        self._traction_default = (float(self._traction_x.value), float(self._traction_y.value))
 
         dofs = fem.locate_dofs_geometrical(Vu, self._dirichlet_boundary)
         zero = np.zeros(2, dtype=default_scalar_type)
@@ -197,6 +199,89 @@ class HyperelasticityModel(PDEModel):
         self._update_ghosts(self.u_fn)
 
         return self.function_to_vertex(self.u_fn, u, is_m=False)
+
+    def residual_correct(self, m, u_tilde, return_diagnostics=False):
+        """
+        One Newton step of the hyperelastic residual, taken from a supplied
+        predicted state ``u_tilde`` rather than from zero. This is the
+        residual-based correction: solve
+            delta_u R(m, u_tilde)(d^c) = -R(m, u_tilde)
+        for d^c and return u^c = u_tilde + d^c. See sec:correction in the
+        book chapter draft; this is exactly eq:corrected_state applied to
+        the hyperelastic residual form defined in __init__.
+
+        Reuses the module's own NewtonSolver (already exercised by every
+        forward solve in this repository) with max_it forced to 1, instead
+        of re-implementing PETSc residual/tangent assembly from scratch.
+        This keeps correctness tied to code that is already validated by
+        solveFwd, rather than to a new, unverified low-level assembly path.
+        Same pattern (max_it=1, error_on_nonconvergence=False) used for the
+        hyperelastic single-Newton-step corrector in the companion
+        agent_neural_operator repository.
+
+        Parameters
+        ----------
+        m : ndarray, vertex-ordered physical modulus field (already transformed,
+            i.e. m = alpha_m*exp(w) + beta_m -- same convention as solveFwd(transform_m=False)).
+        u_tilde : ndarray, vertex-ordered predicted displacement (e.g. neural-operator output).
+        return_diagnostics : if True, also return (residual_norm_before, correction_norm,
+            residual_norm_after) for the practical diagnostics described in sec:correction.
+
+        Returns
+        -------
+        u_c : ndarray, vertex-ordered corrected displacement.
+        """
+        self.vertex_to_function(m, self.m_fn, is_m=True)
+        self._update_ghosts(self.m_fn)
+
+        self.vertex_to_function(u_tilde, self.u_fn, is_m=False)
+        self._update_ghosts(self.u_fn)
+
+        self._setup_solver()
+
+        # correction is defined at the fully-loaded state, cf. eq:topology_states
+        self._traction_x.value, self._traction_y.value = self._traction_default
+
+        res_before = None
+        if return_diagnostics:
+            res_before = self._residual_norm()
+
+        saved_max_it = self._newton_solver.max_it
+        saved_error_flag = getattr(self._newton_solver, "error_on_nonconvergence", None)
+        self._newton_solver.max_it = 1
+        if saved_error_flag is not None:
+            self._newton_solver.error_on_nonconvergence = False
+            num_its, _converged = self._newton_solver.solve(self.u_fn)
+            if num_its != 1:
+                print(f"residual_correct: Newton solver ran {num_its} iterations instead of 1")
+        else:
+            # older dolfinx without error_on_nonconvergence: solve() raises on
+            # nonconvergence, but u_fn is updated in-place before that check.
+            try:
+                self._newton_solver.solve(self.u_fn)
+            except RuntimeError:
+                pass
+        self._newton_solver.max_it = saved_max_it
+        if saved_error_flag is not None:
+            self._newton_solver.error_on_nonconvergence = saved_error_flag
+
+        self._update_ghosts(self.u_fn)
+        u_c = self.function_to_vertex(self.u_fn, is_m=False)
+
+        if return_diagnostics:
+            res_after = self._residual_norm()
+            correction_norm = float(np.linalg.norm(u_c - u_tilde))
+            return u_c, (res_before, correction_norm, res_after)
+
+        return u_c
+
+    def _residual_norm(self):
+        """L2 norm of the assembled residual vector at the current (m_fn, u_fn)."""
+        from dolfinx.fem.petsc import assemble_vector as _assemble_vector
+
+        b = _assemble_vector(fem.form(self._residual_form))
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        return float(np.linalg.norm(b.array))
 
     def samplePrior(self, m=None, transform_m=False):
         if transform_m:
