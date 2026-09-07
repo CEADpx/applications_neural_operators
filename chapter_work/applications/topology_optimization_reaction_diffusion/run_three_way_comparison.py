@@ -32,23 +32,14 @@ NOTEBOOK_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(NOTEBOOK_DIR, "..", "..", ".."))
 PROBLEM_DIR = os.path.join(ROOT, "chapter_work", "problems", "reaction_diffusion")
 
-sys.path.insert(0, os.path.join(ROOT, "src", "prior"))
-sys.path.insert(0, os.path.join(ROOT, "src", "pde"))
-sys.path.insert(0, os.path.join(ROOT, "src", "data"))
-sys.path.insert(0, os.path.join(ROOT, "src", "mcmc"))
-sys.path.insert(0, os.path.join(ROOT, "src", "nn"))
-sys.path.insert(0, os.path.join(ROOT, "src", "nn", "deeponet"))
-sys.path.insert(0, os.path.join(ROOT, "src", "nn", "pcanet"))
-sys.path.insert(0, os.path.join(ROOT, "src", "nn", "fno"))
-sys.path.insert(0, os.path.join(ROOT, "src", "nn", "mlp"))
 sys.path.insert(0, PROBLEM_DIR)
 sys.path.insert(0, NOTEBOOK_DIR)
 
+from neural_operators.prior.priorSampler import PriorSampler
+from neural_operators.nn.nn_util import load_surrogate_model
 from mesh_setup import build_mesh
-from priorSampler import PriorSampler
 from reactionDiffusionModel import ReactionDiffusionModel
 from topology_optimization import optimize_material_field
-from nn_util import load_surrogate_model
 
 RESULTS_DIR = os.path.join(NOTEBOOK_DIR, "Results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -101,9 +92,9 @@ def main():
     model_a = make_model(Vm, Vu, prior_sampler)
 
     # load the already-trained DeepONet surrogate via the SAME infrastructure
-    # used for the Bayesian inference application (src/nn/nn_util.py,
-    # src/mcmc/surrogateModel.py) -- reuses its existing model/data loading
-    # and encode/predict/decode pipeline rather than reimplementing it.
+    # used for the Bayesian inference application (neural_operators.nn.nn_util,
+    # neural_operators.mcmc.surrogateModel) -- reuses its existing model/data
+    # loading and encode/predict/decode pipeline rather than reimplementing it.
     sm = load_surrogate_model("DeepONet", DATA_PREFIX, PROBLEM_DIR, model_a)
 
     v_a, m_a, u_a, hist_a, _ = optimize_material_field(

@@ -32,12 +32,10 @@ NOTEBOOK_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(NOTEBOOK_DIR, "..", "..", ".."))
 PROBLEM_DIR = os.path.join(ROOT, "chapter_work", "problems", "reaction_diffusion")
 
-sys.path.insert(0, os.path.join(ROOT, "src", "prior"))
-sys.path.insert(0, os.path.join(ROOT, "src", "pde"))
 sys.path.insert(0, PROBLEM_DIR)
 
 from mesh_setup import build_mesh
-from priorSampler import PriorSampler
+from neural_operators.prior.priorSampler import PriorSampler
 from reactionDiffusionModel import ReactionDiffusionModel
 from topology_optimization import optimize_material_field
 

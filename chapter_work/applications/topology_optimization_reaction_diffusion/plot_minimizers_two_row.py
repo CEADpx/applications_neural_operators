@@ -31,11 +31,10 @@ NOTEBOOK_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(NOTEBOOK_DIR, "..", "..", ".."))
 PROBLEM_DIR = os.path.join(ROOT, "chapter_work", "problems", "reaction_diffusion")
 
-sys.path.insert(0, os.path.join(ROOT, "src", "plotting"))
 sys.path.insert(0, PROBLEM_DIR)
 sys.path.insert(0, NOTEBOOK_DIR)
 
-from field_plot import quick_field_plot
+from neural_operators.plotting.field_plot import quick_field_plot
 from mesh_setup import build_mesh
 from montage_util import save_image_montage, format_pct_error
 
