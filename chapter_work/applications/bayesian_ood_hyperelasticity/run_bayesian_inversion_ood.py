@@ -1,28 +1,19 @@
 """
 Residual-corrected Bayesian inference under distribution shift (hyperelasticity).
 
-Fills the gap flagged in sec:bayesian ("Role of correction in Bayesian
-inference") of the book chapter draft: the existing Bayesian results in
-survey_work/applications/bayesian_inverse_problem_hyperelasticity use
-uncorrected neural operators on an (approximately) in-distribution truth.
-Here the truth is the OOD field from generate_ground_truth_ood.py, and for
-each neural operator we run pCN-MCMC three ways:
+Truth is the OOD field from generate_ground_truth_ood.py. For each neural
+operator, runs pCN-MCMC three ways:
     1. Reference: finite-element forward model (mcmc.surrogate_to_use=None)
     2. Uncorrected: raw neural-operator forward model
     3. Corrected: neural-operator prediction + one residual correction
        (HyperelasticityModel.residual_correct via CorrectedSurrogateModel)
-
-Expectation, per eq:correction_error_bound and the topology-optimization
-result in sec:topology: (2) should show visibly larger posterior-mean error
-than (1), and (3) should sit close to (1), the same qualitative pattern
-already demonstrated for the optimization application.
 
 Run in the 'neuralopv2' conda environment. Requires
 Results/ground_truth/data.npz from generate_ground_truth_ood.py first.
 
 Usage:
     python run_bayesian_inversion_ood.py            # full run (article-scale)
-    python run_bayesian_inversion_ood.py --quick     # smoke test (~1 min/chain)
+    python run_bayesian_inversion_ood.py --quick     # short run (~1 min/chain)
 """
 import argparse
 import json
@@ -85,15 +76,14 @@ FE_ORDER = 1
 # scaled down by ~5x). This is independent of the truth distribution shift
 # already built into the ground truth (generate_ground_truth_ood.py).
 #
-# Calibrated via check_prior_shift.py (forward-only, no MCMC): at this
-# setting, 10 draws from the shifted prior gave FE-converged states in all
-# cases, with raw-surrogate state error averaging 2-5% (individual draws up
-# to ~19%) -- a visible, moderate degradation, well below the article's
-# transform-based OOD Case 1 (13-25%, tab:prediction_errors) and nowhere near
-# Case 2 (50-70%, where the surrogates stop being useful at all). Shrinking
-# correlation length alone (holding variance roughly fixed) was tested first
-# and had almost no effect (errors stayed near 0%): the surrogates are
-# sensitive to the amplitude/tail of m, not to its spatial frequency content.
+# Calibrated forward-only (no MCMC): at this setting, 10 draws from the
+# shifted prior gave FE-converged states in all cases, with raw-surrogate
+# state error averaging 2-5% (individual draws up to ~19%) -- moderate
+# degradation, below the article's transform-based OOD Case 1 (13-25%,
+# tab:prediction_errors) and well below Case 2 (50-70%). Shrinking
+# correlation length alone (holding variance roughly fixed) had almost no
+# effect: the surrogates are sensitive to the amplitude/tail of m, not to
+# its spatial frequency content.
 INFERENCE_PRIOR_AC = 0.001
 INFERENCE_PRIOR_CC = 0.04
 
@@ -170,7 +160,7 @@ def run_chain(mcmc, surrogate_to_use, n_samples, n_burnin, savepath_base):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--quick", action="store_true", help="fast smoke test (small sample count)")
+    parser.add_argument("--quick", action="store_true", help="short run (small sample count)")
     parser.add_argument("--n_samples", type=int, default=None)
     parser.add_argument("--n_burnin", type=int, default=None)
     parser.add_argument(

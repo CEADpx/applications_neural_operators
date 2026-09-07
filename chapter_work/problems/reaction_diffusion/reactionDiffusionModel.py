@@ -30,9 +30,8 @@ class ReactionDiffusionModel(PDEModel):
     m prior: m = 0.25*exp(w), w a Gaussian random field (logn_scale=0.25,
     logn_translate=0.0), matching CMAME's stated m parameterization.
 
-    Dirichlet at both voids removes the pure-Neumann null space that the
-    flux-only variant (res_corr_work/problems/reaction_diffusion) needed a
-    nonzero u_init workaround for -- starting Newton from u=0 is safe here.
+    Dirichlet at both voids removes the pure-Neumann null space, so Newton
+    starts safely from u=0.
     """
 
     def __init__(
@@ -167,13 +166,11 @@ class ReactionDiffusionModel(PDEModel):
 
     def residual_correct(self, m, u_tilde, return_diagnostics=False):
         """One-Newton-step residual correction: start from a NOP-predicted
-        u_tilde (which only approximately satisfies the PDE) and take a
-        single Newton step of the TRUE physics residual, at the given m, to
-        pull it back toward the true solution manifold. Cheaper than a full
-        solve (which needs many Newton iterations from a generic initial
-        guess), and used to build the "NOP + correction" forward map for the
-        three-way optimization comparison (true FE vs. NOP-only vs. NOP +
-        correction)."""
+        u_tilde and take a single Newton step of the true physics residual
+        at the given m, pulling it back toward the true solution. One step
+        instead of a full solve from a generic initial guess. Used to build
+        the "NOP + correction" forward map for the three-way optimization
+        comparison."""
         self.vertex_to_function(m, self.m_fn, is_m=True)
         self._update_ghosts(self.m_fn)
 

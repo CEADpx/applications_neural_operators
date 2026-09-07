@@ -1,15 +1,14 @@
 """
 Mesh for the Jha CMAME nonlinear reaction-diffusion topology-optimization
-problem, matching the domain exactly as stated in the book chapter
-(sec:topOpt): unit square minus two circular voids,
+problem, matching the domain in the book chapter (sec:topOpt): unit square
+minus two circular voids,
     Omega = (0,1)^2 - B(x_c1, R1) - B(x_c2, R2),
     x_c1=(0.2,0.8), R1=0.1;  x_c2=(0.7,0.3), R2=0.2.
 
-Both void boundaries are Dirichlet (u=0) in the original CMAME BCs, so no
-facet tagging is needed: the outer boundary is the only non-Dirichlet
-(flux) piece, and an unmarked `ds` measure integrates over it exclusively
-once the void dofs are removed by the Dirichlet condition -- same
-"unmarked ds is safe" trick used by src/pde/poissonModel.py.
+Both void boundaries are Dirichlet (u=0), so no facet tagging is needed: the
+outer boundary is the only non-Dirichlet (flux) piece, and an unmarked `ds`
+measure integrates over it exclusively once the void dofs are removed by the
+Dirichlet condition (same as survey_work/problems/poisson/poissonModel.py).
 
 Run standalone to sanity-check mesh generation and save a plot.
 """
@@ -59,15 +58,14 @@ def is_inner_boundary(x, tol=1e-3):
 
 
 def is_inside_any_void(x):
-    """True for points strictly inside either void disk -- NOT just near the
+    """True for points strictly inside either void disk, not just near the
     boundary curve (unlike is_inner_boundary). Needed when interpolating FE
     data onto a regular grid for FNO: scipy.interpolate.griddata's linear
-    interpolation is defined over the convex hull of the FE mesh nodes, and
-    the convex hull of an annulus-like point set (mesh nodes surrounding a
-    hole) is the full square -- griddata will silently bridge values straight
-    across the void, exactly like the tripcolor convex-hull plotting bug
-    found earlier this session. Grid points where this predicate is True
-    must be zero-filled (or masked) after griddata, for both m and u."""
+    interpolation is defined over the convex hull of the FE mesh nodes,
+    which for mesh nodes surrounding a hole is the full square -- griddata
+    silently bridges values straight across the void. Grid points where
+    this predicate is True must be zero-filled (or masked) after griddata,
+    for both m and u."""
     r1 = np.sqrt((x[0] - X_C1[0]) ** 2 + (x[1] - X_C1[1]) ** 2)
     r2 = np.sqrt((x[0] - X_C2[0]) ** 2 + (x[1] - X_C2[1]) ** 2)
     return (r1 < R1) | (r2 < R2)

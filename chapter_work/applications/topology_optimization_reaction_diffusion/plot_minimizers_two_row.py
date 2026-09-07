@@ -1,25 +1,18 @@
 """
-Two-row minimizer comparison, replotted from the already-saved
-three_way_comparison.npz (no rerun needed):
-    Row 1: the optimized m field (minimizer) from each of the three
-           forward maps -- true FE, DeepONet-only, DeepONet+correction.
-           Columns 2/3 show the design (minimizer) error
-               eps_a = ||m* - m*_a|| / ||m*|| * 100,
-           matching eq:optimizationDesignError.
-    Row 2: the u solution AT that minimizer, computed with the SAME
-           forward map that produced it (column 2 shows the raw DeepONet
-           PREDICTION at its own minimizer -- what the optimizer actually
-           saw -- not a true-FE re-evaluation). Columns 2/3 show the state
-           error
-               e_a = ||u* - u*_a|| / ||u*|| * 100,
-           against the FIXED reference u* = F(m*) (the true-FE state at the
-           true-FE minimizer, not re-evaluated at each m*_a), matching
-           eq:optimizationStateError exactly.
+Two-row minimizer comparison, replotted from the saved three_way_comparison.npz:
+    Row 1: the optimized m field from each forward map (true FE, DeepONet-only,
+           DeepONet+correction). Columns 2/3 show the design error
+               eps_a = ||m* - m*_a|| / ||m*|| * 100   (eq:optimizationDesignError)
+    Row 2: the u solution at that minimizer, computed with the forward map
+           that produced it -- column 2 is the raw DeepONet prediction at
+           its own minimizer, not a true-FE re-evaluation. Columns 2/3 show
+           the state error against the fixed reference u* = F(m*) (the
+           true-FE state at the true-FE minimizer):
+               e_a = ||u* - u*_a|| / ||u*|| * 100     (eq:optimizationStateError)
 
-Styled with the SAME montage convention as run_prior_forward_map_comparison.py
-(and the established compare_nops/compareNeuralOperators.ipynb pattern this
-repo already repeats across problems): cmap='jet' throughout, error titles
-via montage_util.py using \\varepsilon for design error and e for state error.
+Montage style matches run_prior_forward_map_comparison.py: cmap='jet',
+error titles via montage_util.py (\\varepsilon for design error, e for state
+error).
 
 Run in the 'neuralopv2' conda environment:
     python plot_minimizers_two_row.py

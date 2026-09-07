@@ -1,16 +1,14 @@
 """
-Forward-map comparison on fresh draws from the SAME prior used to generate
-DeepONet's training data (a=0.005, c=0.2, m=0.25*exp(w)) -- NOT on the
+Forward-map comparison on fresh draws from the prior used to generate
+DeepONet's training data (a=0.005, c=0.2, m=0.25*exp(w)), not the
 optimization results. For each sample m: true FE solve, DeepONet-only
 prediction, DeepONet + one-Newton-step correction.
 
-Styled to match the ESTABLISHED montage convention already repeated
-identically in survey_work/problems/{poisson,linear_elasticity,
+Montage style matches survey_work/problems/{poisson,linear_elasticity,
 hyperelasticity}/compare_nops/compareNeuralOperators.ipynb: rows are
 quantities (Input m, True, DeepONet, DeepONet+Corr), columns are samples,
-cmap='jet' throughout, error titles formatted "$e = X.XX\\%$"
-(montage_util.py is a verbatim copy of that notebook convention's helpers,
-not a new invention).
+cmap='jet' throughout, error titles "$e = X.XX\\%$" (montage_util.py copies
+that notebook's helpers).
 
 Run in the 'neuralopv2' conda environment:
     python run_prior_forward_map_comparison.py

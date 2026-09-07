@@ -1,28 +1,22 @@
 """
 SIMP-style topology optimization of the diffusivity field m in the nonlinear
-reaction-diffusion problem, matching Jha CMAME (sec:topOpt / s:topOptDetails)
-exactly -- same domain, same Dirichlet-at-voids/flux-outer BCs, same
-compliance objective J(m) = int_{Gamma_out} g*u(m) ds, same volume
-constraint mean(m)=eta with m in [m_lw, 1]:
+reaction-diffusion problem, matching Jha CMAME (sec:topOpt / s:topOptDetails):
+same domain, Dirichlet-at-voids/flux-outer BCs, compliance objective
+J(m) = int_{Gamma_out} g*u(m) ds, volume constraint mean(m)=eta with
+m in [m_lw, 1]:
 
     minimize   J(m)
     subject to u(m) solves the reaction-diffusion residual,
                mean(m) = eta,  m_lw <= m <= 1.
 
 Bi-level scheme (outer: update u given m; inner: bisection on the Lagrange
-multiplier lambda to satisfy the volume constraint) is exactly CMAME's
+multiplier lambda to satisfy the volume constraint) follows CMAME's
 Algorithm 1/2, m_new = clip(sqrt(e/lambda), m_lw, 1) with e = (m*grad(u))^2.
 
-The ONE addition relative to CMAME is a Helmholtz PDE filter applied to the
-sensitivity e before this update -- matching the "SIMP + PDE (Helmholtz)
-filter" combination in the topology optimization literature (Lazarov &
-Sigmund 2011), which CMAME's plain pointwise update lacks and which is the
-likely cause of the spiky, poorly-regularized minimizer in the book
-chapter's figure. No Heaviside projection and no passive design zones are
-used here (see res_corr_work/applications/topology_optimization_reaction_diffusion
-for that separate, more heavily modified exploration) -- this module stays
-deliberately close to the original CMAME formulation, with the filter as
-the only fix.
+Adds a Helmholtz PDE filter on the sensitivity e before this update (SIMP +
+PDE filter, Lazarov & Sigmund 2011), which CMAME's plain pointwise update
+lacks; addresses the spiky, poorly-regularized minimizer seen without it.
+No Heaviside projection, no passive design zones.
 """
 import time
 
@@ -186,10 +180,10 @@ def optimize(
     checkpoints=None,
 ):
     """CMAME's bi-level SIMP scheme (init m=0.1 uniform, per the paper) plus
-    the Helmholtz sensitivity filter. filter_radius=0.012 was calibrated
-    this session: r=0 reaches the true bounds [m_lw,1] but shows
-    checkerboard/speckle noise; r=0.04 over-smooths and never reaches the
-    bounds; r in [0.008,0.016] all reach the bounds with no visible noise.
+    the Helmholtz sensitivity filter. filter_radius=0.012: r=0 reaches the
+    true bounds [m_lw,1] but shows checkerboard/speckle noise; r=0.04
+    over-smooths and never reaches the bounds; r in [0.008,0.016] all reach
+    the bounds with no visible noise.
 
     checkpoints: optional list/set of outer-iteration counts (1-indexed) at
     which to save a copy of m -- used to characterize how the true-FE
@@ -256,63 +250,42 @@ def optimize_material_field(
     forward_solver=None,
 ):
     """
-    Material-PROPERTY-field optimization -- deliberately NOT topology
-    optimization. The domain (unit square minus the two circular holes) is
-    filled everywhere with a real host material of diffusivity m0 > 0; nothing
-    is ever "void". We optimize a bounded perturbation field v in [v_lw, 1]
-    (v_lw a small positive numerical floor -- same role as CMAME's own m_lw:
-    the classical multiplicative OC update below cannot move a variable away
-    from exactly 0, since x_new = x*sqrt(...) is a fixed point at x=0
-    regardless of the true gradient, so a strictly positive lower bound is a
-    numerical necessity of this algorithm, not a physical statement), subject
-    to mean(v) = eta, with
+    Material-property-field optimization, not topology optimization. The
+    domain (unit square minus the two circular holes) is filled everywhere
+    with a real host material of diffusivity m0 > 0; nothing is ever void.
+    Optimizes a bounded perturbation field v in [v_lw, 1] (v_lw a small
+    positive floor -- the multiplicative OC update below is a fixed point at
+    x=0 regardless of gradient, so v can't be allowed to reach exactly 0),
+    subject to mean(v) = eta, with
 
         m(x) = m0 + H(v)(x),   H = Helmholtz filter (radius filter_radius).
 
-    m0 must be < eta for mean(v)=eta to be reachable at all: H preserves the
-    spatial mean exactly (homogeneous-Neumann elliptic filter, div theorem
-    kills the Laplacian term on integration), so mean(m) = m0 + eta is fixed
-    once v satisfies its own constraint -- if m0 = eta itself (or larger),
-    v >= 0 could only ever push mean(m) at or above 2*eta, making mean(v)=eta
-    infeasible except at the trivial v=0. m0 = 0.5*eta avoids this.
+    m0 must be < eta for mean(v)=eta to be reachable: H preserves the
+    spatial mean exactly, so mean(m) = m0 + eta once v satisfies its
+    constraint. m0 = 0.5*eta keeps this feasible.
 
-    Since v >= v_lw > 0 and H preserves non-negativity (its Green's function
-    is non-negative, like any screened-Poisson/Yukawa-type operator), m >=
-    m0 > 0 everywhere: no near-numerical-zero region ever appears, unlike
-    SIMP topology optimization's ersatz-void relaxation.
+    Since v >= v_lw > 0 and H preserves non-negativity, m >= m0 > 0
+    everywhere -- no near-zero region, unlike SIMP's ersatz-void relaxation.
 
-    Sensitivity: dJ/dm = -e_phys/m^2 (e_phys=(m grad u)^2, the same quantity
-    CMAME's own scheme calls e -- see optimize() above); dJ/dv = H(dJ/dm) by
-    the filter's self-adjointness (m0's constant shift has zero derivative).
-    This makes the update on v EXACTLY CMAME's own multiplicative OC formula
-    (m_update_from_sensitivity/bisection_inner, reused unchanged) with e
-    replaced by e_v = (-dJ/dv)*v^2 = H(e_phys/m^2)*v^2.
+    Sensitivity: dJ/dm = -e_phys/m^2 (e_phys=(m grad u)^2, same quantity as
+    optimize()'s e); dJ/dv = H(dJ/dm) by the filter's self-adjointness. The
+    update on v reuses m_update_from_sensitivity/bisection_inner unchanged,
+    with e replaced by e_v = (-dJ/dv)*v^2 = H(e_phys/m^2)*v^2.
 
-    damping: under-relaxation factor in (0,1] applied AFTER the move-limited
-    OC/bisection update: v <- damping*v_new_raw + (1-damping)*v_old. Included
-    for completeness, but NOT the fix for what looked like a persistent ~2%
-    oscillation at m_tol=0.005/n_outer_max=150: that was diagnosed (this
-    session) as m_tol itself -- the inner bisection re-solves the volume
-    constraint to only m_tol precision every single outer iteration, and at
-    m_tol=0.005 that alone accounted for essentially all of the apparent
-    oscillation (tightening m_tol to 1e-6 shrank the residual J-range by
-    ~150x). What's left at that tolerance is NOT a limit cycle -- explicitly
-    checked via ||v[k+2]-v[k]|| vs ||v[k+1]-v[k]|| in the tail: period-2
-    distance is ~2x period-1, not ~0, and J decreases monotonically every
-    iteration -- it's just slow, ordinary convergence. Damping does not
-    address that (there is no cycle to damp) and empirically only slows
-    convergence further; the actual fix was tightening m_tol (now the
-    default) and running enough outer iterations.
+    damping: under-relaxation in (0,1] applied after the move-limited
+    OC/bisection update: v <- damping*v_new_raw + (1-damping)*v_old. Not
+    needed to fix oscillation at m_tol=0.005/n_outer_max=150 -- that came
+    from the inner bisection only resolving the volume constraint to m_tol
+    precision each outer iteration; tightening m_tol to 1e-6 (the default)
+    removed it (J decreases monotonically, no limit cycle). Damping alone
+    only slows convergence further.
 
     forward_solver: optional callable (model, m_vertex) -> u_vertex, used in
     place of model.solveFwd for the forward map inside the optimization loop
     (e.g. a NOP surrogate, or a NOP surrogate + residual_correct). Defaults
-    to the true FE solve. Whatever it returns is written into model.u_fn
-    before calling model.compliance(), so compliance/sensitivity are always
-    computed consistently with whichever u was actually produced -- this is
-    what makes the three-way comparison (true FE / NOP-only / NOP+correction)
-    an apples-to-apples swap of only the forward map, nothing else in the
-    optimizer changes.
+    to the true FE solve. Its output is written into model.u_fn before
+    compliance/sensitivity, so the three-way comparison (true FE / NOP-only
+    / NOP+correction) swaps only the forward map.
     """
     if forward_solver is None:
         def forward_solver(model_, m_):

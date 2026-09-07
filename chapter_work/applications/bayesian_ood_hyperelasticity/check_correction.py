@@ -1,23 +1,15 @@
 """
-Cheap sanity check for HyperelasticityModel.residual_correct and
-CorrectedSurrogateModel -- run this BEFORE any MCMC chain.
+Sanity check for HyperelasticityModel.residual_correct and
+CorrectedSurrogateModel. Run before any MCMC chain.
 
-No MCMC, no ground-truth files needed: draws a handful of w samples (some
-in-distribution, some scaled up to mimic the OOD ground truth), and for each
-one prints the relative L2 state error of the raw neural-operator prediction
-vs. the residual-corrected prediction against the finite-element solution.
-
-Expected outcome, consistent with sec:accuracy of the book chapter draft
-("Residual correction of nonlinear predictions") and the topology-optimization
-result: the corrected error should be one to two orders of magnitude smaller
-than the raw error, and this gap should widen (not shrink) as the sample is
-pushed further out of distribution. If corrected error is NOT smaller than
-raw error, or is comparable to it, something in residual_correct's Newton-step
-plumbing (sign convention, BC handling, traction reset) is wrong and should be
-debugged before trusting any MCMC result built on top of it.
+Draws w samples at a few OOD scales and prints the relative L2 state error
+of the raw and residual-corrected neural-operator predictions against the
+finite-element solution. Corrected error should stay well below raw error,
+with the gap widening at larger scale. If not, check residual_correct's
+Newton-step plumbing before trusting an MCMC run.
 
 Run in the 'neuralopv2' conda environment:
-    python smoke_test_correction.py
+    python check_correction.py
 """
 import os
 

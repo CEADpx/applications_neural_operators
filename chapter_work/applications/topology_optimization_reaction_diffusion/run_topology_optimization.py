@@ -42,8 +42,8 @@ ETA = 0.4
 M_LW = 0.001
 FLUX_OUTER = 0.1
 
-# calibrated this session (see topology_optimization.py docstring): reaches
-# the true bounds [m_lw,1] with no checkerboard noise
+# see topology_optimization.py docstring: reaches the true bounds [m_lw,1]
+# with no checkerboard noise
 FILTER_RADIUS = 0.012
 N_OUTER_MAX = 150
 MOVE_LIMIT = 0.1

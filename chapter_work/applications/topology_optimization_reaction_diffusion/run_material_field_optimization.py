@@ -1,17 +1,16 @@
 """
-Material-property-field optimization (NOT topology optimization): the
-domain (unit square minus the two circular holes) is filled everywhere with
-a real host material of diffusivity m0 = 0.5*eta > 0. We optimize a bounded
-perturbation field v in [v_lw, 1] with mean(v) = eta, and
+Material-property-field optimization, not topology optimization: the domain
+(unit square minus the two circular holes) is filled everywhere with a real
+host material of diffusivity m0 = 0.5*eta > 0. Optimizes a bounded
+perturbation field v in [v_lw, 1] with mean(v) = eta, where
 
-    m(x) = m0 + H(v)(x),   H = Helmholtz filter,
+    m(x) = m0 + H(v)(x),   H = Helmholtz filter
 
-is the physical diffusivity fed to the PDE -- so m >= m0 > 0 everywhere,
-never a near-numerical-zero "void" (unlike SIMP topology optimization's
-ersatz-material relaxation, which is a genuinely different kind of problem).
+is the physical diffusivity fed to the PDE, so m >= m0 > 0 everywhere --
+no near-zero "void" as in SIMP's ersatz-material relaxation.
 
 Same domain/BCs/objective as run_topology_optimization.py (Dirichlet at both
-voids, outer flux g=0.1, J = int_Gamma_out g*u ds) -- only the
+voids, outer flux g=0.1, J = int_Gamma_out g*u ds); only the
 parameterization of the design variable changes.
 
 Run in the 'neuralopv2' conda environment:
@@ -51,12 +50,10 @@ V_LW = 0.001            # numerical floor on v, same role as CMAME's m_lw
 FLUX_OUTER = 0.1
 
 FILTER_RADIUS = 0.012
-# m_tol tightened to 1e-6 (now optimize_material_field's default): the loose
-# m_tol=0.005 used originally was re-solving the volume constraint to only
-# 0.5% precision every outer iteration, which alone produced ~all of what
-# looked like a persistent 2% oscillation in J (diagnosed this session --
-# not a limit cycle; tightening m_tol shrank the residual ~150x, and what's
-# left is confirmed-monotonic slow convergence, not cycling)
+# m_tol=0.005 re-solved the volume constraint to only 0.5% precision each
+# outer iteration, producing a ~2% oscillation in J; tightening to 1e-6
+# (optimize_material_field's default) removed it -- monotonic convergence,
+# not a limit cycle.
 N_OUTER_MAX = 300
 MOVE_LIMIT = 0.1
 CHECKPOINTS = [1, 2, 3, 5, 10, 20, 50, 100, 150, 300]

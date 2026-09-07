@@ -1,10 +1,7 @@
 """
-Image-montage helpers, copied verbatim from the established convention
-already repeated in survey_work/problems/{poisson,linear_elasticity,
-hyperelasticity}/compare_nops/compareNeuralOperators.ipynb (each of those
-notebooks defines the same functions locally rather than importing from
-src/ -- this file follows that same repeated pattern for reaction-diffusion,
-rather than inventing a new montage style).
+Image-montage helpers, matching the convention in
+survey_work/problems/{poisson,linear_elasticity,hyperelasticity}/
+compare_nops/compareNeuralOperators.ipynb.
 """
 from io import BytesIO
 
@@ -13,13 +10,9 @@ from PIL import Image
 
 
 def format_pct_error(err, precision=2, symbol="e"):
-    """precision=2 matches the established compare_nops convention; pass a
-    higher value (or use scientific notation via the 'e' format below) for
-    correction-step errors, which can be small enough that 2 decimals round
-    to 0.00% and hide the actual (nonzero) improvement. symbol: the LaTeX
-    error symbol, e.g. "e" for state error or "\\varepsilon" for design/
-    minimizer error, matching the notation in eq:optimizationDesignError /
-    eq:optimizationStateError."""
+    """symbol: "e" for state error, "\\varepsilon" for design/minimizer
+    error (eq:optimizationDesignError / eq:optimizationStateError). Raise
+    precision for correction-step errors small enough to round to 0.00%."""
     return rf"${symbol} = {100 * err:.{precision}f}\,\%$"
 
 

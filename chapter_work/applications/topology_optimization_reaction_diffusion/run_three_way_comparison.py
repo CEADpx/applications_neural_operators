@@ -1,19 +1,17 @@
 """
 Three-way comparison for the material-field optimization application:
-    (A) true FE forward solve (baseline, already validated),
+    (A) true FE forward solve (baseline),
     (B) DeepONet surrogate only (F_NOP in place of F inside the optimizer),
     (C) DeepONet surrogate + one-Newton-step residual correction.
 
-Same problem/BCs/objective/optimizer settings across all three -- only the
+Same problem/BCs/objective/optimizer settings across all three; only the
 forward map inside optimize_material_field's loop changes (via the
-forward_solver argument), so this is an apples-to-apples swap.
+forward_solver argument).
 
-The fair comparison metric is NOT the self-reported J during optimization
-(which for (B)/(C) is only as accurate as the surrogate at each iterate) --
-it's the TRUE compliance of each variant's FINAL design, evaluated with a
-genuine full FE solve regardless of which forward_solver drove the
-optimization. That answers the actually meaningful question: how good is
-the design each variant converges to, under real physics.
+Comparison metric is the true compliance of each variant's final design,
+evaluated with a full FE solve regardless of which forward_solver drove the
+optimization -- not the self-reported J during optimization, which for
+(B)/(C) is only as accurate as the surrogate at each iterate.
 
 Run in the 'neuralopv2' conda environment:
     python run_three_way_comparison.py
