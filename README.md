@@ -1,12 +1,12 @@
 # applications_neural_operators
 
-Applications built on the [neural_operators](TBD) library: the neural-operator survey article and the book chapter on residual correction.
+Applications built on the [neural_operators](https://github.com/CEADpx/neural_operators) library: the neural-operator survey article and the book chapter on residual correction.
 
 Each subfolder pins the commit or tag of `neural_operators` it was built against (see table below). Update the pin explicitly when adopting library changes; don't assume the latest library commit works with an existing subfolder.
 
 ## Environment
 
-Same conda environment as `neural_operators` (`neuralopv2`); see that repo's [neuralop.yml](TBD).
+Same conda environment as `neural_operators` (`neuralopv2`); see that repo's [neuralop.yml](https://github.com/CEADpx/neural_operators/blob/main/neuralop.yml).
 
 ## Repository layout
 
