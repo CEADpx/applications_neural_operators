@@ -12,8 +12,12 @@ Same conda environment as `neural_operators` (`neuralopv2`); see that repo's [ne
 
 | Folder | Built against `neural_operators` | Content |
 |--------|-----------------------------------|---------|
-| [survey_work](survey_work) | tag `survey26_v2` | Neural-operator survey article: Poisson, linear elasticity, hyperelasticity forward problems, NOP training, Bayesian inversion |
-| [chapter_work](chapter_work) | TBD | Book chapter: reaction-diffusion problem, topology optimization, residual-corrected Bayesian inference under distribution shift |
+| [survey_work](survey_work) | tag `v1.0.0` | Neural-operator survey article: Poisson, linear elasticity, hyperelasticity forward problems, NOP training, Bayesian inversion |
+| [chapter_work](chapter_work) | tag `v1.0.0` | Book chapter: reaction-diffusion problem, topology optimization, residual-corrected Bayesian inference under distribution shift |
+
+`v1.0.0` is the first release of `neural_operators` as an installable package (`pip install -e .` from that repo, or pin the tag directly: `pip install "neural_operators @ git+https://github.com/CEADpx/neural_operators.git@v1.0.0"`). Both folders were ported off the pre-package flat `src/{pde,prior,plotting,...}` layout (`survey26_v2`-era) onto this tag in the same pass; update both rows together if either folder adopts a newer library tag, since a folder half-migrated to a new API is worse than one pinned to an old one.
+
+Trained artifacts (`model.pkl`, MCMC `tracer.pkl`) saved under the old flat layout won't unpickle under `v1.0.0` (Python pickles the class's module path at save time, and the old flat modules no longer exist) -- retrain rather than trying to load them. Fresh data/samples (`.npz`) are unaffected; only pickled Python objects hit this.
 
 ## Shared data
 
