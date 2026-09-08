@@ -1,6 +1,3 @@
-import os
-import sys
-
 import numpy as np
 import ufl
 from dolfinx import default_scalar_type, fem
@@ -12,9 +9,7 @@ from dolfinx.fem.petsc import (
 )
 from petsc4py import PETSc
 
-_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-sys.path.insert(0, os.path.join(_root, "src", "pde"))
-from pdeModel import PDEModel
+from neural_operators.pde.pdeModel import PDEModel
 
 
 class PoissonModel(PDEModel):

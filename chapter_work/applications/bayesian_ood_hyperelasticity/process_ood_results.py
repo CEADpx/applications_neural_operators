@@ -28,24 +28,15 @@ NOTEBOOK_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(NOTEBOOK_DIR, '..', '..', '..'))
 MODEL_DIR = os.path.join(ROOT, "survey_work/problems/hyperelasticity")
 
-sys.path.insert(0, os.path.join(ROOT, "src/plotting"))
-sys.path.insert(0, os.path.join(ROOT, "src/data"))
-sys.path.insert(0, os.path.join(ROOT, "src/prior"))
-sys.path.insert(0, os.path.join(ROOT, "src/mcmc"))
-sys.path.insert(0, os.path.join(ROOT, "src/nn"))
-sys.path.insert(0, os.path.join(ROOT, "src/nn/deeponet"))
-sys.path.insert(0, os.path.join(ROOT, "src/nn/pcanet"))
-sys.path.insert(0, os.path.join(ROOT, "src/nn/fno"))
-sys.path.insert(0, os.path.join(ROOT, "src/nn/mlp"))
 sys.path.insert(0, MODEL_DIR)
 
+from neural_operators.prior.priorSampler import PriorSampler
+from neural_operators.mcmc.mcmc import MCMC
+from neural_operators.mcmc.mcmc_postprocess import plot_mcmc_tracer_results
+from neural_operators.mcmc.correctedSurrogateModel import CorrectedSurrogateModel
+from neural_operators.nn.nn_util import load_surrogate_model
+from neural_operators.plotting.plot_mix_collection import get_default_plot_mix_collection_data, plot_mix_collection
 from hyperelasticityModel import HyperelasticityModel
-from mcmc import MCMC
-from mcmc_postprocess import plot_mcmc_tracer_results
-from plot_mix_collection import get_default_plot_mix_collection_data, plot_mix_collection
-from priorSampler import PriorSampler
-from nn_util import load_surrogate_model
-from correctedSurrogateModel import CorrectedSurrogateModel
 
 plt.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 

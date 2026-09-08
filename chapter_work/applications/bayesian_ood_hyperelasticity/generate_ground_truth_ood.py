@@ -37,13 +37,10 @@ NOTEBOOK_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(NOTEBOOK_DIR, '..', '..', '..'))
 ELASTICITY_DIR = os.path.join(ROOT, "survey_work/problems/hyperelasticity")
 
-sys.path.insert(0, os.path.join(ROOT, "src/plotting"))
-sys.path.insert(0, os.path.join(ROOT, "src/prior"))
-sys.path.insert(0, os.path.join(ROOT, "src/pde"))
 sys.path.insert(0, ELASTICITY_DIR)
 
+from neural_operators.prior.priorSampler import PriorSampler
 from hyperelasticityModel import HyperelasticityModel
-from priorSampler import PriorSampler
 
 # ---------------------------------------------------------------------------
 # Configuration
